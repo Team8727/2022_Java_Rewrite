@@ -7,14 +7,17 @@ package frc.robot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.subsystems.Drivetrain;
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
-
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 
+import frc.robot.commands.*;
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
  * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
@@ -28,26 +31,27 @@ public class RobotContainer {
   public final Joystick m_rightStick = new Joystick(2);
   public final Drivetrain m_drivetrain = new Drivetrain();
 
-  public final RunCommand m_teleopArcadeDrive =  new RunCommand(() -> m_drivetrain.arcadeDrive(
-    Drivetrain.NonLinear(-m_driverController.getLeftY()),
-    Drivetrain.NonLinear(m_driverController.getRightX()),
-    m_driverController.getRightBumper()),
-    m_drivetrain);
-
-  public final RunCommand m_teleopTankDrive = new RunCommand(() -> m_drivetrain.tankDrive(
-    Drivetrain.NonLinear(-m_leftStick.getY()),
-    Drivetrain.NonLinear(-m_rightStick.getY()),
-    m_rightStick.getTrigger()),
-    m_drivetrain);
-
   public ShuffleboardTab driveTrainTab = Shuffleboard.getTab("Drivetrain");
   public NetworkTableEntry controlMode = driveTrainTab.add("Control Mode", true).withWidget(BuiltInWidgets.kToggleSwitch).getEntry();
 
-  public final ConditionalCommand m_teleopDrive = new ConditionalCommand(m_teleopArcadeDrive, m_teleopTankDrive, () -> controlMode.getBoolean(true));
-
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    // Configure the button bindings
+    //Set default drivetrain command (user drive)
+    m_drivetrain.setDefaultCommand(new ConditionalCommand(
+      new UserArcadeDrive(
+        () -> -m_driverController.getLeftY(),
+        () -> -m_driverController.getRightX(),
+        () -> m_driverController.getRightTriggerAxis() > .1,
+        m_drivetrain),
+      new UserTankDrive(
+        () -> -m_leftStick.getY(),
+        () -> -m_rightStick.getY(),
+        m_rightStick::getTrigger,
+        m_drivetrain), 
+      () -> controlMode.getBoolean(true)));
+
+    SmartDashboard.putData(m_drivetrain);
+    //configure the button bindings
     configureButtonBindings();
   }
 

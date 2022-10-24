@@ -6,16 +6,18 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+//
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 
+//Kinematics and drivetrain abstractions
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
-import edu.wpi.first.math.filter.SlewRateLimiter;
 
+//Math
 import java.lang.Math;
 import edu.wpi.first.math.MathUtil;
 
@@ -29,16 +31,13 @@ public class Drivetrain extends SubsystemBase {
   private final WPI_TalonFX m_rightFollow = new WPI_TalonFX(Constants.CanId.rightDriveFollow);
 
   //Create motor controller groups
-  private final MotorControllerGroup m_left = new MotorControllerGroup(m_leftLead,m_leftFollow); 
-  private final MotorControllerGroup m_right = new MotorControllerGroup(m_rightLead,m_rightFollow);
+  private final MotorControllerGroup m_left = new MotorControllerGroup(m_leftLead, m_leftFollow); 
+  private final MotorControllerGroup m_right = new MotorControllerGroup(m_rightLead, m_rightFollow);
 
   //Create Drivetrain controllers and kinematics objects
   private SimpleMotorFeedforward m_lFeedforward = new SimpleMotorFeedforward(Constants.Drive.Feedforward.Left.kS, Constants.Drive.Feedforward.Left.kV, Constants.Drive.Feedforward.Left.kA);
   private SimpleMotorFeedforward m_rFeedforward = new SimpleMotorFeedforward(Constants.Drive.Feedforward.Right.kS, Constants.Drive.Feedforward.Right.kV, Constants.Drive.Feedforward.Right.kA);
   private DifferentialDriveKinematics m_driveKinematics = new DifferentialDriveKinematics(Constants.Drive.kTrackWidth);
-
-  private SlewRateLimiter m_accelLimiter = new SlewRateLimiter(Constants.Drive.Rate.driverForwardAccel);
-  private SlewRateLimiter m_rotateLimiter = new SlewRateLimiter(Constants.Drive.Rate.driverRotateAccel);
 
 
   //Constructor taking no arguments, all relevant values are defined in Constants.java
@@ -59,62 +58,21 @@ public class Drivetrain extends SubsystemBase {
     m_leftFollow.setNeutralMode(nMode);
   }
 
-  //Sets the SlewRateLimiter accelration limits on 
-  public void setAccelLimits(double forward, double rotate){
-    m_accelLimiter = new SlewRateLimiter(forward);
-    m_rotateLimiter = new SlewRateLimiter(rotate);
+  //Simple arcade drive that uses a percentage (-1.00 to 1.00) of the max forward and angular speeds to drive the chassis at
+  public void arcadeDrive(double linearPercent, double angularPercent){
+    linearPercent = MathUtil.clamp(linearPercent, -1, 1);
+    angularPercent = MathUtil.clamp(angularPercent, -1, 1);
+
+    double maxAngularSpeed = m_driveKinematics.toChassisSpeeds(new DifferentialDriveWheelSpeeds(Constants.Drive.Rate.maxSpeed, Constants.Drive.Rate.maxSpeed)).omegaRadiansPerSecond;
+    driveChassisSpeeds(new ChassisSpeeds(Constants.Drive.Rate.maxSpeed * linearPercent, 0, maxAngularSpeed * angularPercent));
   }
 
-  public void setAccelLimits(double forward, double rotate, double forwardInit, double rotateInit){
-    m_accelLimiter = new SlewRateLimiter(forward, forwardInit);
-    m_rotateLimiter = new SlewRateLimiter(rotate, rotateInit);
-  }
+  //Simple tank drive that uses a percentage (-1.00 to 1.00) of the max left and right speeds to drive the wheels at
+  public void tankDrive(double leftPercent, double rightPercent){
+    leftPercent = MathUtil.clamp(leftPercent, -1, 1);
+    rightPercent = MathUtil.clamp(rightPercent, -1 , 1);
 
-  public void resetForwardLimiter(double value){
-    m_accelLimiter.reset(value);
-  }
-
-  public void resetRotateLimiter(double value){
-    m_rotateLimiter.reset(value);
-  }
-
-  //Class takes two values [-1 to 1] for the desired speed on each side of the robot and  calls driveWheelSpeeds with the calculated and conditioned values
-  public void tankDrive(double leftSpeed, double rightSpeed, boolean boost){
-    //Limit values to desired range
-    leftSpeed = MathUtil.clamp(leftSpeed, -1, 1);
-    rightSpeed = MathUtil.clamp(rightSpeed, -1, 1);
-    
-    double leftDriveSpeed = leftSpeed * (boost ? Constants.Drive.Rate.maxForwardSpeed : Constants.Drive.Rate.driverSpeed);
-    double rightDriveSpeed = rightSpeed * (boost ? Constants.Drive.Rate.maxForwardSpeed : Constants.Drive.Rate.driverSpeed);
-
-    driveWheelSpeeds(new DifferentialDriveWheelSpeeds(leftDriveSpeed, rightDriveSpeed));
-  }
-
-  public void tankDrive(double leftSpeed, double rightSpeed){
-    tankDrive(leftSpeed, rightSpeed, false);
-  }
-
-  //Takes two values [-1 to 1] for linear speed and angular rotation and calls driveChassisSpeeds with the calculated and conditioned values
-  public void arcadeDrive(double xSpeed, double zRotation, boolean boost, boolean rateLimit){
-    //Limit values to desired range
-    xSpeed = MathUtil.clamp(xSpeed, -1.0, 1.0);
-    zRotation = MathUtil.clamp(zRotation, -1.0, 1.0);
-
-    //Calculate the linear and rotation speeds requested by the inputs using either the boost(max) range, or the driver range
-    double linearSpeed = xSpeed * (boost ? Constants.Drive.Rate.maxForwardSpeed : Constants.Drive.Rate.driverSpeed);
-    double rotateSpeed = zRotation * Constants.Drive.Rate.driverRotate;
-
-    if (rateLimit) driveChassisSpeeds(new ChassisSpeeds(m_accelLimiter.calculate(linearSpeed), 0, m_rotateLimiter.calculate(rotateSpeed)));
-    else driveChassisSpeeds(new ChassisSpeeds(linearSpeed, 0, rotateSpeed));
-  }
-
-  //Arcade drive overloads for default parameters
-  public void arcadeDrive(double xSpeed, double zRotation){
-    arcadeDrive(xSpeed, zRotation, false, true);
-  }
-
-  public void arcadeDrive(double xSpeed, double zRotation, boolean boost){
-    arcadeDrive(xSpeed, zRotation, boost, true);
+    driveWheelSpeeds(new DifferentialDriveWheelSpeeds(Constants.Drive.Rate.maxSpeed * leftPercent, Constants.Drive.Rate.maxSpeed * rightPercent));
   }
 
   //Set the appropriate motor voltages for a desired set of wheel speeds
@@ -126,6 +84,12 @@ public class Drivetrain extends SubsystemBase {
   //Set the appropriate motor voltages for a desired set of linear and angular chassis speeds
   public void driveChassisSpeeds(ChassisSpeeds chassisSpeeds){
     driveWheelSpeeds(m_driveKinematics.toWheelSpeeds(chassisSpeeds));
+  }
+
+  //Drive the motors at a given voltage
+  public void driveVoltages(double leftVoltage, double rightVoltage){
+    m_left.setVoltage(leftVoltage);
+    m_right.setVoltage(rightVoltage);
   }
 
   //Utility function to map joystick input nonlinearly for driver "feel"
