@@ -10,6 +10,7 @@ import frc.robot.subsystems.Drivetrain;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
@@ -32,24 +33,17 @@ public class RobotContainer {
   public final Drivetrain m_drivetrain = new Drivetrain();
 
   public ShuffleboardTab driveTrainTab = Shuffleboard.getTab("Drivetrain");
-  public NetworkTableEntry controlMode = driveTrainTab.add("Control Mode", true).withWidget(BuiltInWidgets.kToggleSwitch).getEntry();
+  public NetworkTableEntry controlMode = driveTrainTab.add("Control Mode", true).withWidget(BuiltInWidgets.kToggleButton).getEntry();
+  public final Trigger changeControlMode = new Trigger(() -> controlMode.getBoolean(true));
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     //Set default drivetrain command (user drive)
-    m_drivetrain.setDefaultCommand(new ConditionalCommand(
-      new UserArcadeDrive(
-        () -> -m_driverController.getLeftY(),
-        () -> -m_driverController.getRightX(),
-        () -> m_driverController.getRightTriggerAxis() > .1,
-        m_drivetrain),
-      new UserTankDrive(
-        () -> -m_leftStick.getY(),
-        () -> -m_rightStick.getY(),
-        m_rightStick::getTrigger,
-        m_drivetrain), 
-      () -> controlMode.getBoolean(true)));
-
+    m_drivetrain.setDefaultCommand(new UserArcadeDrive(
+      () -> -m_driverController.getLeftY(),
+      () -> -m_driverController.getRightX(),
+      () -> m_driverController.getRightTriggerAxis() > .1,
+      m_drivetrain));
     SmartDashboard.putData(m_drivetrain);
     //configure the button bindings
     configureButtonBindings();
@@ -62,6 +56,15 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    
+    changeControlMode.whenActive(new InstantCommand(() -> m_drivetrain.setDefaultCommand(new UserArcadeDrive(
+      () -> -m_driverController.getLeftY(),
+      () -> -m_driverController.getRightX(),
+      () -> m_driverController.getRightTriggerAxis() > .1,
+      m_drivetrain)), m_drivetrain));
+    changeControlMode.whenInactive(new InstantCommand(() -> m_drivetrain.setDefaultCommand(new UserTankDrive(
+      () -> -m_leftStick.getY(),
+      () -> -m_rightStick.getY(),
+      m_rightStick::getTrigger,
+      m_drivetrain)), m_drivetrain));
   }
 }
