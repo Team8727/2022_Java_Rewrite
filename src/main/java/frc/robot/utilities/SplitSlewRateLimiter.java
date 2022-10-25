@@ -46,10 +46,17 @@ public class SplitSlewRateLimiter {
     double speedDelta = Math.abs(newValue) - Math.abs(m_prevVal);
 
     // Switch between the two based on the sign of the rate of absolute change (speed vs velocity)
-    if (speedDelta >= 0) m_prevVal += MathUtil.clamp(speedDelta, -m_accelLimit * elapsedTime, m_accelLimit * elapsedTime);
-    else m_prevVal += MathUtil.clamp(speedDelta, -m_decelLimit * elapsedTime, m_decelLimit * elapsedTime);
+    if (speedDelta >= 0) m_prevVal += MathUtil.clamp(newValue - m_prevVal, -m_accelLimit * elapsedTime, m_accelLimit * elapsedTime);
+    else m_prevVal += MathUtil.clamp(newValue - m_prevVal, -m_decelLimit * elapsedTime, m_decelLimit * elapsedTime);
 
     m_prevTime = currentTime;
+    return m_prevVal;
+  }
+
+  //Update the filter without limiting rate of change
+  public double overrideCalculate(double newValue){
+    m_prevVal = newValue;
+    m_prevTime = WPIUtilJNI.now() * 1e-6;
     return m_prevVal;
   }
 }
