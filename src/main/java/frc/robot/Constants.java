@@ -51,10 +51,10 @@ public final class Constants {
         public final class Rate{
             //Speeds in m/s rotations in rad/s
             public static final double maxSpeed = 5.45;
-            public static final double driverSpeed = 3.75;
-            public static final double driverAngularSpeed = 2;
-            public static final double driverAccel = 3;
-            public static final double driverDeccel = 6;
+            public static final double driverSpeed = 4;
+            public static final double driverAngularSpeed = 3;
+            public static final double driverAccel = 5;
+            public static final double driverDeccel = 10;
         }
     }
 

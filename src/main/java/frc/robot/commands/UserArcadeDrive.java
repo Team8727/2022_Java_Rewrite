@@ -54,7 +54,9 @@ public class UserArcadeDrive extends CommandBase {
     double angularSpeed = zRotation * Constants.Drive.Rate.driverAngularSpeed;
 
     //Apply the calculated speeds to the drivetrain
-    m_drivetrain.driveChassisSpeeds(new ChassisSpeeds(m_accelerationLimiter.calculate(linearSpeed), 0, angularSpeed));
+    m_drivetrain.driveChassisSpeeds(new ChassisSpeeds((
+      m_boostInput.getAsBoolean() ? m_accelerationLimiter.overrideCalculate(linearSpeed): m_accelerationLimiter.calculate(linearSpeed)),
+       0, angularSpeed));
   }
 
   //Unpower the motors when the command ends or is interuppted
