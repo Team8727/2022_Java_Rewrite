@@ -24,7 +24,7 @@ import frc.robot.commands.*;
  */
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
-  public final XboxController m_driverController = new XboxController(Constants.primaryController);
+  public final XboxController m_driverController = new XboxController(Constants.Ports.primaryController);
   public final Joystick m_leftStick = new Joystick(1);
   public final Joystick m_rightStick = new Joystick(2);
   public final Drivetrain m_drivetrain = new Drivetrain();
