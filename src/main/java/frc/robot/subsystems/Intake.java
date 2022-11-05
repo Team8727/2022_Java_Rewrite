@@ -1,7 +1,8 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Solenoid;
@@ -82,5 +83,21 @@ public class Intake extends SubsystemBase{
 	public void setCompressor(boolean enabled){
 		if (enabled) m_compressor.enableDigital();
 		else m_compressor.disable();
+	}
+
+	//Returns a basic command that doesn't use breakbeams to run the intake
+	public Command sensorlessIntakeCommand(){
+		return new StartEndCommand(
+			() -> {
+				setIntake(true);
+				setMotor(IndexPosition.UPPER, Constants.Intake.OutputLevel.upperConveyorVoltage);
+				setMotor(IndexPosition.LOWER, Constants.Intake.OutputLevel.intakeVoltage);
+			},
+			() -> {
+				setIntake(false);
+				setMotor(IndexPosition.UPPER, 0);
+				setMotor(IndexPosition.LOWER, 0);
+			},
+			this);
 	}
 }

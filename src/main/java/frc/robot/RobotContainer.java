@@ -7,6 +7,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
@@ -33,6 +34,8 @@ public class RobotContainer {
 
   public ShuffleboardTab driveTrainTab = Shuffleboard.getTab("Drivetrain");
   public NetworkTableEntry controlMode = driveTrainTab.add("Control Mode", true).withWidget(BuiltInWidgets.kToggleButton).getEntry();
+  public ShuffleboardTab shooterIntakeTab = Shuffleboard.getTab("ShooterIntake");
+  public NetworkTableEntry defaultBreakbeams = driveTrainTab.add("Default breakbeams", false).withWidget(BuiltInWidgets.kToggleButton).getEntry();
   public final Trigger changeControlMode = new Trigger(() -> controlMode.getBoolean(true));
   public final JoystickButton intakeButton = new JoystickButton(m_driverController, XboxController.Button.kRightBumper.value);
   public final JoystickButton clearBalls = new JoystickButton(m_driverController, XboxController.Button.kLeftBumper.value);
@@ -47,6 +50,7 @@ public class RobotContainer {
       () -> m_driverController.getRightTriggerAxis() > .1,
       m_drivetrain));
     SmartDashboard.putData(m_drivetrain);
+    SmartDashboard.putData(m_intake);
     //configure the button bindings
     configureButtonBindings();
   }
@@ -69,6 +73,9 @@ public class RobotContainer {
       m_rightStick::getTrigger,
       m_drivetrain)), m_drivetrain));
 
-      intakeButton.whenReleased(new UserIntake(m_driverController::getRightBumperPressed, m_intake), false);
+      intakeButton.whenPressed(new ConditionalCommand(
+        m_intake.sensorlessIntakeCommand().until(m_driverController::getRightBumperReleased),
+        new UserIntake(m_driverController::getRightBumperPressed, m_intake),
+        () -> defaultBreakbeams.getBoolean(false)), false);
   }
 }
