@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
@@ -99,5 +100,48 @@ public class Intake extends SubsystemBase{
 				setMotor(IndexPosition.LOWER, 0);
 			},
 			this);
+	}
+
+	public Command upperFeedCommand(){
+		return new StartEndCommand(
+			() -> {
+				setMotor(IndexPosition.UPPER, Constants.Intake.OutputLevel.shooterFeedVoltage);
+				if (getBallIndex(IndexPosition.LOWER)) setMotor(IndexPosition.UPPER, Constants.Intake.OutputLevel.shooterFeedVoltage);
+			},
+			() -> {
+				setMotor(IndexPosition.UPPER, 0);
+				setMotor(IndexPosition.LOWER, 0);
+				setBallIndex(IndexPosition.UPPER, false);
+			},
+			this).withTimeout(Constants.Intake.shootTime);
+	}
+	
+	public Command indexBallsCommand(){
+		if (!(getBallIndex(IndexPosition.UPPER) && getBallIndex(IndexPosition.LOWER))) return new InstantCommand();
+
+		return new StartEndCommand(
+			() -> {
+				setMotor(IndexPosition.UPPER, Constants.Intake.OutputLevel.upperConveyorVoltage);
+				setMotor(IndexPosition.LOWER, Constants.Intake.OutputLevel.intakeVoltage);
+			},
+			() -> {
+				setMotor(IndexPosition.UPPER, 0);
+				setMotor(IndexPosition.LOWER, 0);
+				setBallIndex(true, false);
+			},
+			this).until(() -> getBreakBeam(IndexPosition.UPPER)).withTimeout(Constants.Intake.indexingTimeout);
+	}
+
+	public Command ejectLowerCommand(){
+		if (!getBallIndex(IndexPosition.LOWER)) return new InstantCommand();
+
+		return new StartEndCommand(
+			() -> setMotor(IndexPosition.LOWER, Constants.Intake.OutputLevel.ejectVoltage),
+			() -> {
+				setMotor(IndexPosition.LOWER, 0);
+				setBallIndex(IndexPosition.LOWER, false);
+			},
+			this
+		);
 	}
 }

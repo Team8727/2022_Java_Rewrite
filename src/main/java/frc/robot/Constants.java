@@ -74,6 +74,7 @@ public final class Constants {
       public static final double highDefault = 4020;
       public static final double lowDefault = 800;
       public static final double idleVelocity = 1000;
+      public static final double ejectVelocity = 3000;
     }
     public final class PID{
       public static final double kP = 0;
@@ -86,11 +87,15 @@ public final class Constants {
     public static final boolean invertUpper = false;
     public static final boolean invertLower = false;
     public static final double intakeTimeout = 2;
+    public static final double shootTime = .25;
+    public static final double indexingTimeout = 1;
 
     //Ouput levels in volts
     public final class OutputLevel{
       public static final double intakeVoltage = 6;
       public static final double upperConveyorVoltage = 6;
+      public static final double shooterFeedVoltage = 8;
+      public static final double ejectVoltage = -4;
     }
   }
 
