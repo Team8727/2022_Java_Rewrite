@@ -63,6 +63,7 @@ public final class Constants {
   }
 
   public final class Shooter{
+    public static final boolean invert = false;
     public final class Feedforward{
       //Feedforwards from sysid
       public static final double kS = 1;
@@ -78,6 +79,18 @@ public final class Constants {
       public static final double kP = 0;
       public static final double kI = 0;
       public static final double kD = 0;
+    }
+  }
+  
+  public final class Intake{
+    public static final boolean invertUpper = false;
+    public static final boolean invertLower = false;
+    public static final double intakeTimeout = 2;
+
+    //Ouput levels in volts
+    public final class OutputLevel{
+      public static final double intakeVoltage = 6;
+      public static final double upperConveyorVoltage = 6;
     }
   }
 

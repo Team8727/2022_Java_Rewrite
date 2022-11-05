@@ -21,7 +21,8 @@ public class Shooter extends SubsystemBase {
   public Shooter() {
     m_shooterLead.restoreFactoryDefaults();
     m_shooterFollow.restoreFactoryDefaults();
-    m_shooterFollow.follow(m_shooterFollow, true);
+    m_shooterLead.setInverted(Constants.Shooter.invert);
+    m_shooterFollow.follow(m_shooterFollow, !Constants.Shooter.invert);
     m_shooterPIDController = m_shooterLead.getPIDController();
 
     m_shooterPIDController.setP(Constants.Shooter.PID.kP);
