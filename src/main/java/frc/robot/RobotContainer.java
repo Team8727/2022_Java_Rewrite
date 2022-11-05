@@ -6,7 +6,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
-import frc.robot.subsystems.Drivetrain;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
@@ -16,6 +16,7 @@ import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import frc.robot.commands.*;
+import frc.robot.subsystems.*;
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
  * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
@@ -28,10 +29,14 @@ public class RobotContainer {
   public final Joystick m_leftStick = new Joystick(1);
   public final Joystick m_rightStick = new Joystick(2);
   public final Drivetrain m_drivetrain = new Drivetrain();
+  public final Intake m_intake = new Intake();
 
   public ShuffleboardTab driveTrainTab = Shuffleboard.getTab("Drivetrain");
   public NetworkTableEntry controlMode = driveTrainTab.add("Control Mode", true).withWidget(BuiltInWidgets.kToggleButton).getEntry();
   public final Trigger changeControlMode = new Trigger(() -> controlMode.getBoolean(true));
+  public final JoystickButton intakeButton = new JoystickButton(m_driverController, XboxController.Button.kRightBumper.value);
+  public final JoystickButton clearBalls = new JoystickButton(m_driverController, XboxController.Button.kLeftBumper.value);
+
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -63,5 +68,7 @@ public class RobotContainer {
       () -> -m_rightStick.getY(),
       m_rightStick::getTrigger,
       m_drivetrain)), m_drivetrain));
+
+      intakeButton.whenReleased(new UserIntake(m_driverController::getRightBumperPressed, m_intake), false);
   }
 }
