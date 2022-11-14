@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.NetworkButton;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
@@ -15,6 +16,7 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.subsystems.Intake.IndexPosition;
 
 import frc.robot.commands.*;
 import frc.robot.subsystems.*;
@@ -38,9 +40,12 @@ public class RobotContainer {
   public NetworkTableEntry controlMode = driveTrainTab.add("Control Mode", true).withWidget(BuiltInWidgets.kToggleButton).getEntry();
   public ShuffleboardTab shooterIntakeTab = Shuffleboard.getTab("ShooterIntake");
   public NetworkTableEntry defaultBreakbeams = shooterIntakeTab.add("Default breakbeams", false).withWidget(BuiltInWidgets.kToggleButton).getEntry();
+
   public final NetworkButton changeControlMode = new NetworkButton(controlMode);
   public final JoystickButton intakeButton = new JoystickButton(m_driverController, XboxController.Button.kRightBumper.value);
-  public final JoystickButton shooterButton = new JoystickButton(m_driverController, XboxController.Button.kA.value);
+  public final JoystickButton shooterButton = new JoystickButton(m_driverController, XboxController.Button.kLeftBumper.value);
+  public final JoystickButton ejectHighButton = new JoystickButton(m_driverController, XboxController.Button.kA.value);
+  public final JoystickButton ejectLowButton = new JoystickButton(m_driverController, XboxController.Button.kB.value);
 
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
@@ -53,6 +58,7 @@ public class RobotContainer {
       m_drivetrain));
     SmartDashboard.putData(m_drivetrain);
     SmartDashboard.putData(m_intake);
+    SmartDashboard.putData(m_shooter);
     //configure the button bindings
     configureButtonBindings();
   }
@@ -81,9 +87,14 @@ public class RobotContainer {
         () -> defaultBreakbeams.getBoolean(false)), false);
 
       shooterButton.whenPressed(new ConditionalCommand(
-        ShooterIntakeCommands.defaultedShootCommand(m_shooter, m_intake).until(m_driverController::getAButtonReleased),
+        ShooterIntakeCommands.defaultedShootCommand(m_shooter, m_intake).until(m_driverController::getLeftBumperReleased),
         ShooterIntakeCommands.shootCommand(true, m_shooter, m_intake),
         () -> defaultBreakbeams.getBoolean(false)), false);
 
+      ejectHighButton.and(new Trigger(() -> m_intake.getBallIndex(IndexPosition.UPPER)))
+        .whenActive(ShooterIntakeCommands.ejectUpperCommand(m_shooter, m_intake));
+
+      ejectLowButton.and(new Trigger(() -> m_intake.getBallIndex(IndexPosition.LOWER)))
+        .whenActive(m_intake.ejectLowerCommand());
   }
 }

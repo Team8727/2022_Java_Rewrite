@@ -4,6 +4,7 @@ import frc.robot.Constants;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Intake.IndexPosition;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -16,22 +17,19 @@ public class ShooterIntakeCommands {
 
   //Internal method to generate the command sequence for feeding the shooter balls based on the current ball index
   private static Command feedShooterCommand(Intake intake) {
-    if (intake.getBallIndex(IndexPosition.UPPER) && intake.getBallIndex(IndexPosition.LOWER))
-      return intake.upperFeedCommand()
-      .andThen(intake.indexBallsCommand())
-      .andThen(intake.upperFeedCommand());
-    
-    else if (intake.getBallIndex(IndexPosition.UPPER))
-      return intake.upperFeedCommand();
-
-    else return new InstantCommand();
+    return new ConditionalCommand(
+      intake.upperFeedCommand()
+        .andThen(intake.indexBallsCommand())
+        .andThen(intake.upperFeedCommand()),
+      intake.upperFeedCommand(),
+      () -> intake.getBallIndex(IndexPosition.LOWER));
   }
 
   //Shooter sequence command
   public static Command shootCommand(boolean high, Shooter shooter, Intake intake){
     return shooter.shooterSpinUpCommand(high ? Constants.Shooter.Velocities.highDefault:Constants.Shooter.Velocities.lowDefault)
-    .andThen(feedShooterCommand(intake))
-    .andThen(shooter.shooterIdleCommand());
+      .andThen(feedShooterCommand(intake))
+      .andThen(shooter.shooterIdleCommand());
   }
 
   public static Command defaultedShootCommand(Shooter shooter, Intake intake){

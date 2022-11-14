@@ -31,8 +31,8 @@ public final class Constants {
   public final class Ports{
     public static final int primaryController = 0;
     public static final int solenoidPort = 0;
-    public static final int upperBreakBeamDIO = 0;
-    public static final int lowerBreakBeamDIO = 1;
+    public static final int upperBreakBeamDIO = 1;
+    public static final int lowerBreakBeamDIO = 0;
   }
 
   public final class Drive{
@@ -73,7 +73,7 @@ public final class Constants {
     public final class Velocities{
       public static final double highDefault = 4020;
       public static final double lowDefault = 800;
-      public static final double idleVelocity = 1000;
+      public static final double idleVelocity = 500;
       public static final double ejectVelocity = 3000;
     }
     public final class PID{
@@ -87,17 +87,19 @@ public final class Constants {
     public static final boolean invertUpper = false;
     public static final boolean invertLower = false;
     public static final double intakeTimeout = 2;
-    public static final double shootTime = .25;
+    public static final double shootTime = .5;
     public static final double indexingTimeout = 1;
+    public static final double outtakeTimeout = .75;
 
     //Ouput levels in volts
     public final class OutputLevel{
-      public static final double intakeVoltage = 6;
-      public static final double upperConveyorVoltage = 6;
+      public static final double intakeVoltage = 8.5;
+      public static final double upperConveyorVoltage = 8.5;
       public static final double shooterFeedVoltage = 8;
-      public static final double ejectVoltage = -4;
+      public static final double ejectVoltage = -8;
     }
   }
 
   public static final boolean[] motorConfigs = {true,false,false};
+  public static final double breakBeamDebouce = .015;
 }
