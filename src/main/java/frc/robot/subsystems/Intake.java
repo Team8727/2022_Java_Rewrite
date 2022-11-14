@@ -3,12 +3,16 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.utilities.EdgeDetector;
 
 import frc.robot.Constants;
 
@@ -29,6 +33,10 @@ public class Intake extends SubsystemBase{
 	private DigitalInput m_lowerBreakBeam = new DigitalInput(Constants.Ports.lowerBreakBeamDIO);
 	private DigitalInput m_upperBreakBeam = new DigitalInput(Constants.Ports.upperBreakBeamDIO);
 
+	private EdgeDetector m_lowerBBDetector = new EdgeDetector(() -> !m_lowerBreakBeam.get(), Constants.breakBeamDebouce);
+	private EdgeDetector m_upperBBDetector = new EdgeDetector(() -> !m_upperBreakBeam.get(), Constants.breakBeamDebouce);
+
+
 	private Compressor m_compressor = new Compressor(Constants.CanId.compressor, PneumaticsModuleType.CTREPCM);
 	private Solenoid m_intakeSolenoid = new Solenoid(Constants.CanId.compressor, PneumaticsModuleType.CTREPCM, Constants.Ports.solenoidPort);
 
@@ -38,6 +46,11 @@ public class Intake extends SubsystemBase{
 	public Intake(){
 		m_intakeLowerTalon.setInverted(Constants.Intake.invertLower);
 		m_upperConveyorTalon.setInverted(Constants.Intake.invertUpper);
+	}
+
+	@Override
+	public void periodic(){
+		SmartDashboard.putBooleanArray("What the fuck", ballIndex);
 	}
 
 	//Get the raw ball index
@@ -65,8 +78,13 @@ public class Intake extends SubsystemBase{
 
 	//Check if breakbeam is broken
 	public boolean getBreakBeam(IndexPosition position){
-		if (position == IndexPosition.LOWER) return !m_lowerBreakBeam.get();
-		else return !m_upperBreakBeam.get();
+		if (position == IndexPosition.LOWER) return m_lowerBBDetector.get();
+		else return m_upperBBDetector.get();
+	}
+
+	public boolean getBreakBeamRising(IndexPosition position){
+		if (position == IndexPosition.LOWER) return m_lowerBBDetector.detectRising();
+		else return m_upperBBDetector.detectRising();
 	}
 
 	//Set a conveyor motor's voltage
@@ -106,19 +124,18 @@ public class Intake extends SubsystemBase{
 		return new StartEndCommand(
 			() -> {
 				setMotor(IndexPosition.UPPER, Constants.Intake.OutputLevel.shooterFeedVoltage);
-				if (getBallIndex(IndexPosition.LOWER)) setMotor(IndexPosition.UPPER, Constants.Intake.OutputLevel.shooterFeedVoltage);
+				if (getBallIndex(IndexPosition.LOWER)) setMotor(IndexPosition.LOWER, Constants.Intake.OutputLevel.shooterFeedVoltage);
 			},
 			() -> {
 				setMotor(IndexPosition.UPPER, 0);
 				setMotor(IndexPosition.LOWER, 0);
 				setBallIndex(IndexPosition.UPPER, false);
 			},
-			this).withTimeout(Constants.Intake.shootTime);
+			this)
+			.withTimeout(Constants.Intake.shootTime);
 	}
 	
 	public Command indexBallsCommand(){
-		if (!(getBallIndex(IndexPosition.UPPER) && getBallIndex(IndexPosition.LOWER))) return new InstantCommand();
-
 		return new StartEndCommand(
 			() -> {
 				setMotor(IndexPosition.UPPER, Constants.Intake.OutputLevel.upperConveyorVoltage);
@@ -127,21 +144,20 @@ public class Intake extends SubsystemBase{
 			() -> {
 				setMotor(IndexPosition.UPPER, 0);
 				setMotor(IndexPosition.LOWER, 0);
-				setBallIndex(true, false);
+				setBallIndex(false, true);
 			},
-			this).until(() -> getBreakBeam(IndexPosition.UPPER)).withTimeout(Constants.Intake.indexingTimeout);
+			this)
+			.until(() -> getBreakBeamRising(IndexPosition.UPPER));//.withTimeout(Constants.Intake.indexingTimeout);
 	}
 
 	public Command ejectLowerCommand(){
-		if (!getBallIndex(IndexPosition.LOWER)) return new InstantCommand();
-
 		return new StartEndCommand(
 			() -> setMotor(IndexPosition.LOWER, Constants.Intake.OutputLevel.ejectVoltage),
 			() -> {
 				setMotor(IndexPosition.LOWER, 0);
 				setBallIndex(IndexPosition.LOWER, false);
 			},
-			this
-		);
+			this)
+			.withTimeout(Constants.Intake.outtakeTimeout);
 	}
 }
